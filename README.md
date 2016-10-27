@@ -41,5 +41,5 @@ Please note that this is work in progress and all structures and commands are su
 the IoT Ecosystem evolves. 
 
 Dependencies on:
-https://github.com/bblanchon/ArduinoJson
-https://github.com/256dpi/arduino-mqtt
+* https://github.com/bblanchon/ArduinoJson
+* https://github.com/256dpi/arduino-mqtt
