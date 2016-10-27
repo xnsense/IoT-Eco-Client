@@ -1,9 +1,9 @@
 #include <iotecoclient.h>
 
-#define APP_NAME    "GarageDoor"
-#define WLAN_SSID       "Roar_Etne"
-#define WLAN_PASS       "monoLi10"
-#define AIO_SERVER      "192.168.10.203"
+#define APP_NAME    "mySEnsorApp"
+#define WLAN_SSID       "myAccessPoint"
+#define WLAN_PASS       "myAPPassword"
+#define AIO_SERVER      "myMQTTAddress"
 #define AIO_SERVERPORT  1883
 const int version[] = { 1, 0, 0, 0 };
 
