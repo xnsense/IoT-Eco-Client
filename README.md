@@ -10,8 +10,8 @@ This library is used on ESP8266 modules, in order to solve:
 When initialized, the IoTEcoClient object will start listening on the MQTT server
 on topic sensors/#
 
-Any received message is parsed in the JSON library and it's tested for the presense of
-a "id" propery matching this unit's MAC address.
+Any received message is parsed in the JSON library and is tested for the presense of
+an "id" property matching this unit's MAC address.
 
 Whenever such a message is received, it will be passed on to the registered callback function
 (as a json object)
@@ -36,3 +36,6 @@ At MQTT topic "sensors/GarageDoor/connected":
 }
 
 (Except the id, which is really the MAC address, these parameters are passed to the begin method)
+
+Please note that this is work in progress and all structures and commands are subject to change as 
+the IoT Ecosystem evolves. 
