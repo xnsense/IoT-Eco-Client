@@ -1,7 +1,7 @@
 // xinit.h
 
-#ifndef _XINIT_h
-#define _XINIT_h
+#ifndef _IOTECOCLIENTCLASS_h
+#define _IOTECOCLIENTCLASS_h
 
 #include "arduino.h"
 #include <ESP8266WiFi.h>
@@ -29,7 +29,6 @@ private:
 
 	void MQTT_connect();
 	void UpgradeFirmware(String pUrl);
-	String getJsonValue(JsonObject& json, String key);
 
 	void(*mqttMessageCallback)(JsonObject& json) = NULL;
 protected:
@@ -47,6 +46,7 @@ public:
 	void sendMqttMessage(String topic, String message);
 	void mqttMessageReceived(String topic, String payload, char * bytes, unsigned int length);
 	void setMqttMessageCallback(void(*mqttMessageCallback)(JsonObject& json));
+	String getJsonValue(JsonObject& json, String key);
 };
 
 extern IoTEcoClientClass IoTEcoClient;
