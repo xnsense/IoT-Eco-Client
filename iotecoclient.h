@@ -13,6 +13,7 @@
 class IoTEcoClientClass
 {
 private:
+	bool secure = false;
 	Stream* debugger = NULL;
 	char appName[30];
 	const int* version;
@@ -25,7 +26,7 @@ private:
 
 	char mqttClientName[60];
 
-	WiFiClient client;
+	WiFiClient *client;
 	byte mac[6];                     // the MAC address of your Wifi shield
 	PubSubClient mqtt;
 
@@ -42,6 +43,7 @@ public:
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, Stream& debugger);
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass);
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger);
+	void beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger);
 	void loop();
 	void printFlashInfo();
 	void printDeviceInfo();

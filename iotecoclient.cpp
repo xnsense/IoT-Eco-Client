@@ -9,6 +9,13 @@ IoTEcoClientClass::IoTEcoClientClass()
 {
 
 }
+
+void IoTEcoClientClass::beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger)
+{
+	this->secure = true;
+	this->debugger = &debugger;
+	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort, mqttUser, mqttPass);
+}
 void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger)
 {
 	this->debugger = &debugger;
@@ -32,12 +39,20 @@ void IoTEcoClientClass::begin(String appName, const int version[], String ssid, 
 	appName.toCharArray(this->appName, appName.length() + 1);
 	ssid.toCharArray(this->ssid, ssid.length() + 1);
 	ssidPassword.toCharArray(this->ssidPassword, ssidPassword.length() + 1);
+	
+	if (secure)
+		client = new WiFiClientSecure();
+	else
+		client = new WiFiClient();
+
 	mqtt.toCharArray(this->mqttName, mqtt.length() + 1);
 	this->mqttPort = mqttPort;
 
+
+
 	String vMqttName = String(this->appName) + "[" + WiFi.macAddress() + "]";
 	vMqttName.toCharArray(mqttClientName, vMqttName.length() + 1);
-	this->mqtt = PubSubClient(client);
+	this->mqtt = PubSubClient(*client);
 
 	this->printDeviceInfo();
 	WiFi.begin(this->ssid, this->ssidPassword);
@@ -58,7 +73,7 @@ void IoTEcoClientClass::loop()
 	mqtt.loop();
 	delay(10); // <- fixes some issues with WiFi stability
 
-	if (!client.connected() || !mqtt.connected()) {
+	if (!client->connected() || !mqtt.connected()) {
 		MQTT_connect();
 	}
 }
@@ -72,7 +87,7 @@ void IoTEcoClientClass::sendMqttMessage(String message)
 
 void IoTEcoClientClass::sendMqttMessage(String topic, String message)
 {
-	if (!client.connected() || !mqtt.connected()) {
+	if (!client->connected() || !mqtt.connected()) {
 		MQTT_connect();
 	}
 
