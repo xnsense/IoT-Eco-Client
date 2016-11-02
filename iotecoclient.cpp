@@ -10,8 +10,12 @@ IoTEcoClientClass::IoTEcoClientClass()
 
 }
 
-void IoTEcoClientClass::beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger)
+void IoTEcoClientClass::beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttClientID, String mqttUser, String mqttPass, String mqttPublishTopic, String mqttSubscribeTopic, Stream& debugger)
 {
+	this->mqttClientID = mqttClientID.c_str();
+	this->mqttPublishTopic = mqttPublishTopic.c_str();
+	this->mqttSubscribeTopic = mqttSubscribeTopic.c_str();
+
 	this->secure = true;
 	this->debugger = &debugger;
 	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort, mqttUser, mqttPass);
@@ -48,22 +52,20 @@ void IoTEcoClientClass::begin(String appName, const int version[], String ssid, 
 	mqtt.toCharArray(this->mqttName, mqtt.length() + 1);
 	this->mqttPort = mqttPort;
 
-
-
 	String vMqttName = String(this->appName) + "[" + WiFi.macAddress() + "]";
-	vMqttName.toCharArray(mqttClientName, vMqttName.length() + 1);
+	mqttClientName = mqttClientID == 0 ? vMqttName.c_str() : mqttClientID;
+	
 	this->mqtt = PubSubClient(*client);
 
 	this->printDeviceInfo();
 	WiFi.begin(this->ssid, this->ssidPassword);
 	this->mqtt.setServer(mqttName, this->mqttPort);
 
-
 	//std::function<void(char*, unsigned char*, unsigned int)> vCallback = MakeDelegate(this, IoTEcoClientClass::mqttMessageReceived);
 	this->mqtt.setCallback(IoTEcoClientClass_mqttMessageReceived);
 	this->MQTT_connect();
 
-	String topic = String("sensors/") + String(appName) + String("/connected");
+	String topic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) + String("/connected") : String(mqttPublishTopic);
 	String message = String("{ \"id\": \"" + WiFi.macAddress() + "\", \"name\": \"" + appName + "\", \"fw\": \"" + GetVersionString() + "\" }");
 	sendMqttMessage(topic, message);
 }
@@ -81,7 +83,7 @@ void IoTEcoClientClass::loop()
 
 void IoTEcoClientClass::sendMqttMessage(String message)
 {
-	String vTopic = String("sensors/") + String(appName);
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) : String(mqttPublishTopic);
 	sendMqttMessage(vTopic, message);
 }
 
@@ -176,7 +178,8 @@ void IoTEcoClientClass::MQTT_connect() {
 		if ((mqttUser == 0 && mqtt.connect(mqttClientName)) || (mqttUser != 0 && mqtt.connect(mqttClientName, mqttUser, mqttPass)))
 		{
 			if (debugger) debugger->println("\nSuccessfully connected to MQTT!");
-			mqtt.subscribe("sensors/#");
+			const char * vTopic = mqttSubscribeTopic == 0 ? "sensors/#" : mqttSubscribeTopic;
+			mqtt.subscribe(vTopic);
 		}
 		else
 		{

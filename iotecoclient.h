@@ -24,7 +24,10 @@ private:
 	const char* mqttUser = 0;
 	const char* mqttPass = 0;
 
-	char mqttClientName[60];
+	const char* mqttClientName = 0;
+	const char* mqttClientID = 0;
+	const char* mqttPublishTopic = 0;
+	const char* mqttSubscribeTopic = 0;
 
 	WiFiClient *client;
 	byte mac[6];                     // the MAC address of your Wifi shield
@@ -43,7 +46,7 @@ public:
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, Stream& debugger);
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass);
 	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger);
-	void beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger);
+	void beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttClientID, String mqttUser, String mqttPass, String mqttPublishTopic, String mqttSubscribeTopic, Stream& debugger);
 	void loop();
 	void printFlashInfo();
 	void printDeviceInfo();
