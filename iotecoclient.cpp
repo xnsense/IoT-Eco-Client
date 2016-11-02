@@ -2,10 +2,23 @@
 // 
 // 
 
+void IoTEcoClientClass_mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
+
 #include "iotecoclient.h"
 IoTEcoClientClass::IoTEcoClientClass()
 {
 
+}
+void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger)
+{
+	this->debugger = &debugger;
+	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort, mqttUser, mqttPass);
+}
+void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass)
+{
+	this->mqttUser = mqttUser.c_str();
+	this->mqttPass = mqttPass.c_str();
+	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort);
 }
 void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, Stream& debugger)
 {
@@ -24,10 +37,15 @@ void IoTEcoClientClass::begin(String appName, const int version[], String ssid, 
 
 	String vMqttName = String(this->appName) + "[" + WiFi.macAddress() + "]";
 	vMqttName.toCharArray(mqttClientName, vMqttName.length() + 1);
+	this->mqtt = PubSubClient(client);
 
 	this->printDeviceInfo();
 	WiFi.begin(this->ssid, this->ssidPassword);
-	this->mqtt.begin(mqttName, this->mqttPort, client);
+	this->mqtt.setServer(mqttName, this->mqttPort);
+
+
+	//std::function<void(char*, unsigned char*, unsigned int)> vCallback = MakeDelegate(this, IoTEcoClientClass::mqttMessageReceived);
+	this->mqtt.setCallback(IoTEcoClientClass_mqttMessageReceived);
 	this->MQTT_connect();
 
 	String topic = String("sensors/") + String(appName) + String("/connected");
@@ -58,7 +76,7 @@ void IoTEcoClientClass::sendMqttMessage(String topic, String message)
 		MQTT_connect();
 	}
 
-	mqtt.publish(topic, message);
+	mqtt.publish(topic.c_str(), message.c_str());
 }
 
 
@@ -139,21 +157,33 @@ void IoTEcoClientClass::MQTT_connect() {
 
 	if (debugger) debugger->println("\nconnecting to MQTT...");
 
-	while (!mqtt.connect(mqttClientName)) { //, "user", "pass")) {
-		client.stop();
-		mqtt.disconnect();
-		if (debugger) debugger->print(".");
-		delay(1000);
+	while (!mqtt.connected()) { // (!mqtt.connect(mqttClientName)) { //, "user", "pass")) {
+		if ((mqttUser == 0 && mqtt.connect(mqttClientName)) || (mqttUser != 0 && mqtt.connect(mqttClientName, mqttUser, mqttPass)))
+		{
+			if (debugger) debugger->println("\nSuccessfully connected to MQTT!");
+			mqtt.subscribe("sensors/#");
+		}
+		else
+		{
+			if (debugger) debugger->print(".");
+			if (debugger) debugger->print("failed, rc=");
+			if (debugger) debugger->print(mqtt.state());
+			if (debugger) debugger->println(" try again in 5 seconds");
+			// Wait 2 seconds before retrying
+			delay(2000);
+		}
 	}
 
-	if (debugger) debugger->println("\nconnected to MQTT!");
-	mqtt.subscribe("sensors/#");
+	
 }
 
 
 
 void IoTEcoClientClass::UpgradeFirmware(String pUrl)
 {
+	String initMessage = String("{ \"id\": \"" + WiFi.macAddress() + "\", \"fw\": \"" + GetVersionString() + "\", \"message\":\"OTA upgrade from [" + pUrl + "]\" }");
+	sendMqttMessage(initMessage);
+
 	char vUrlArray[255];
 	pUrl.toCharArray(vUrlArray, pUrl.length() + 1);
 
@@ -168,7 +198,7 @@ void IoTEcoClientClass::UpgradeFirmware(String pUrl)
 		message += ESPhttpUpdate.getLastErrorString().c_str();
 		if (debugger) debugger->println(message);
 
-		mqtt.publish("sensors/esp2", String("{\"id\": \"" + WiFi.macAddress() + "\", \"error\":\"" + message + "\"}"));
+		mqtt.publish("sensors/esp2", String("{\"id\": \"" + WiFi.macAddress() + "\", \"error\":\"" + message + "\"}").c_str());
 		break;
 
 	case HTTP_UPDATE_NO_UPDATES:
@@ -182,18 +212,24 @@ void IoTEcoClientClass::UpgradeFirmware(String pUrl)
 	}
 }
 
-void IoTEcoClientClass::mqttMessageReceived(String topic, String payload, char * bytes, unsigned int length) {
+void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length) {
+	
+	char message[MQTT_MAX_PACKET_SIZE];
+	for (int i = 0; i < length; i++)
+		message[i] = payload[i];
+	message[length] = 0;
+	
 	if (debugger)
 	{
 		debugger->print("incoming: ");
 		debugger->print(topic);
 		debugger->print(" - ");
-		debugger->print(payload);
+		debugger->print(message);
 		debugger->println();
 	}
 
 	DynamicJsonBuffer jsonBuffer;
-	JsonObject& json = jsonBuffer.parseObject(bytes);
+	JsonObject& json = jsonBuffer.parseObject(message);
 
 	if (getJsonValue(json, "id").equals(WiFi.macAddress()))
 	{
@@ -231,7 +267,8 @@ void IoTEcoClientClass::setMqttMessageCallback(void(*mqttMessageCallback)(JsonOb
 
 IoTEcoClientClass IoTEcoClient;
 
-void messageReceived(String topic, String payload, char * bytes, unsigned int length) {
-	IoTEcoClient.mqttMessageReceived(topic, payload, bytes, length);
-}
 
+
+void IoTEcoClientClass_mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length) {
+	IoTEcoClient.mqttMessageReceived(topic, payload, length);
+}
