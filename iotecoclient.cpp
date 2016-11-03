@@ -10,46 +10,46 @@ IoTEcoClientClass::IoTEcoClientClass()
 
 }
 
-void IoTEcoClientClass::beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttClientID, String mqttUser, String mqttPass, String mqttPublishTopic, String mqttSubscribeTopic, Stream& debugger)
+void IoTEcoClientClass::beginSecure(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttClientID, const char* mqttUser, const char* mqttPass, const char* mqttPublishTopic, const char* mqttSubscribeTopic, Stream& debugger)
 {
-	this->mqttClientID = mqttClientID.c_str();
-	this->mqttPublishTopic = mqttPublishTopic.c_str();
-	this->mqttSubscribeTopic = mqttSubscribeTopic.c_str();
+	this->mqttClientID = mqttClientID;
+	this->mqttPublishTopic = mqttPublishTopic;
+	this->mqttSubscribeTopic = mqttSubscribeTopic;
 
 	this->secure = true;
 	this->debugger = &debugger;
 	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort, mqttUser, mqttPass);
 }
-void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger)
+void IoTEcoClientClass::begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass, Stream& debugger)
 {
 	this->debugger = &debugger;
 	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort, mqttUser, mqttPass);
 }
-void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass)
+void IoTEcoClientClass::begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass)
 {
-	this->mqttUser = mqttUser.c_str();
-	this->mqttPass = mqttPass.c_str();
+	this->mqttUser = mqttUser;
+	this->mqttPass = mqttPass;
 	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort);
 }
-void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, Stream& debugger)
+void IoTEcoClientClass::begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, Stream& debugger)
 {
 	this->debugger = &debugger;
 	begin(appName, version, ssid, ssidPassword, mqtt, mqttPort);
 }
 
-void IoTEcoClientClass::begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort)
+void IoTEcoClientClass::begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort)
 {
 	this->version = version;
-	appName.toCharArray(this->appName, appName.length() + 1);
-	ssid.toCharArray(this->ssid, ssid.length() + 1);
-	ssidPassword.toCharArray(this->ssidPassword, ssidPassword.length() + 1);
+	this->appName = appName;
+	this->ssid = ssid;
+	this->ssidPassword = ssidPassword;
 	
 	if (secure)
 		client = new WiFiClientSecure();
 	else
 		client = new WiFiClient();
 
-	mqtt.toCharArray(this->mqttName, mqtt.length() + 1);
+	this->mqttName = mqtt;
 	this->mqttPort = mqttPort;
 
 	String vMqttName = String(this->appName) + "[" + WiFi.macAddress() + "]";
@@ -264,8 +264,19 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 		else
 		{
 			if (this->mqttMessageCallback)
+			{
+				if (debugger) debugger->println("Passing message on to client");
 				this->mqttMessageCallback(json);
+			}
+			else
+			{
+				if (debugger) debugger->println("Client is not subscribing to messages");
+			}
 		}
+	}
+	else
+	{
+		if (debugger) debugger->println("Message was not addressed for this device");
 	}
 }
 

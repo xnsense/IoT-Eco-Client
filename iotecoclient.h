@@ -15,11 +15,11 @@ class IoTEcoClientClass
 private:
 	bool secure = false;
 	Stream* debugger = NULL;
-	char appName[30];
+	const char* appName;
 	const int* version;
-	char ssid[30];
-	char ssidPassword[30];
-	char mqttName[30];
+	const char* ssid;
+	const char* ssidPassword;
+	const char* mqttName;
 	int mqttPort;
 	const char* mqttUser = 0;
 	const char* mqttPass = 0;
@@ -42,11 +42,11 @@ protected:
 
 public:
 	IoTEcoClientClass();
-	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort);
-	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, Stream& debugger);
-	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass);
-	void begin(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttUser, String mqttPass, Stream& debugger);
-	void beginSecure(String appName, const int version[], String ssid, String ssidPassword, String mqtt, int mqttPort, String mqttClientID, String mqttUser, String mqttPass, String mqttPublishTopic, String mqttSubscribeTopic, Stream& debugger);
+	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort);
+	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, Stream& debugger);
+	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass);
+	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass, Stream& debugger);
+	void beginSecure(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttClientID, const char* mqttUser, const char* mqttPass, const char* mqttPublishTopic, const char* mqttSubscribeTopic, Stream& debugger);
 	void loop();
 	void printFlashInfo();
 	void printDeviceInfo();
