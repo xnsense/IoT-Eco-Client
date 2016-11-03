@@ -66,8 +66,7 @@ void IoTEcoClientClass::begin(const char* appName, const int version[], const ch
 	this->MQTT_connect();
 
 	String topic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) + String("/connected") : String(mqttPublishTopic);
-	String message = String("{ \"id\": \"" + WiFi.macAddress() + "\", \"name\": \"" + appName + "\", \"fw\": \"" + GetVersionString() + "\" }");
-	sendMqttMessage(topic, message);
+	sendMqttMessage(topic, "connected");
 }
 
 void IoTEcoClientClass::loop()
@@ -85,6 +84,12 @@ bool IoTEcoClientClass::connected()
 	return client->connected() && mqtt.connected();
 }
 
+void IoTEcoClientClass::sendMqttMessage(JsonObject& message)
+{
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) : String(mqttPublishTopic);
+	sendMqttMessage(vTopic, message);
+}
+
 void IoTEcoClientClass::sendMqttMessage(String message)
 {
 	String vTopic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) : String(mqttPublishTopic);
@@ -93,11 +98,27 @@ void IoTEcoClientClass::sendMqttMessage(String message)
 
 void IoTEcoClientClass::sendMqttMessage(String topic, String message)
 {
+	StaticJsonBuffer<500> jsonBuffer;
+	JsonObject& json = jsonBuffer.createObject();
+	json["message"] = message;
+
+	sendMqttMessage(topic, json);
+}
+
+void IoTEcoClientClass::sendMqttMessage(String topic, JsonObject& message)
+{
 	if (!client->connected() || !mqtt.connected()) {
 		MQTT_connect();
 	}
 
-	mqtt.publish(topic.c_str(), message.c_str());
+	message["id"] = WiFi.macAddress();
+	message["type"] = appName;
+	message["fw"] = GetVersionString();
+
+	String msg;
+	message.printTo(msg);
+
+	mqtt.publish(topic.c_str(), msg.c_str());
 }
 
 
@@ -203,7 +224,7 @@ void IoTEcoClientClass::MQTT_connect() {
 
 void IoTEcoClientClass::UpgradeFirmware(String pUrl)
 {
-	String initMessage = String("{ \"id\": \"" + WiFi.macAddress() + "\", \"fw\": \"" + GetVersionString() + "\", \"message\":\"OTA upgrade from [" + pUrl + "]\" }");
+	String initMessage = String("OTA upgrade from [" + pUrl + "]");
 	sendMqttMessage(initMessage);
 
 	char vUrlArray[255];
@@ -220,7 +241,7 @@ void IoTEcoClientClass::UpgradeFirmware(String pUrl)
 		message += ESPhttpUpdate.getLastErrorString().c_str();
 		if (debugger) debugger->println(message);
 
-		mqtt.publish("sensors/esp2", String("{\"id\": \"" + WiFi.macAddress() + "\", \"error\":\"" + message + "\"}").c_str());
+		sendMqttMessage(String("ERROR: " + message));
 		break;
 
 	case HTTP_UPDATE_NO_UPDATES:
@@ -255,9 +276,9 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 
 	if (getJsonValue(json, "id").equals(WiFi.macAddress()))
 	{
-		if (getJsonValue(json, "Command").equals("UpgradeFromHttp"))
+		if (getJsonValue(json, "command").equals("UpgradeFromHttp"))
 		{
-			String vUrl = getJsonValue(json, "FirmwareUrl");
+			String vUrl = getJsonValue(json, "url");
 			if (vUrl.length() > 4)
 			{
 				if (debugger) debugger->print("Upgrade requested from url:");

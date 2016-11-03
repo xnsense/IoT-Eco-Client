@@ -54,6 +54,8 @@ public:
 	String GetVersionString();
 	void sendMqttMessage(String message);
 	void sendMqttMessage(String topic, String message);
+	void sendMqttMessage(JsonObject& message);
+	void sendMqttMessage(String topic, JsonObject& message);
 	void setMqttMessageCallback(void(*mqttMessageCallback)(JsonObject& json));
 	String getJsonValue(JsonObject& json, String key);
 	void mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
