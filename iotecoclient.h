@@ -48,6 +48,7 @@ public:
 	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass, Stream& debugger);
 	void beginSecure(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttClientID, const char* mqttUser, const char* mqttPass, const char* mqttPublishTopic, const char* mqttSubscribeTopic, Stream& debugger);
 	void loop();
+	bool connected();
 	void printFlashInfo();
 	void printDeviceInfo();
 	String GetVersionString();

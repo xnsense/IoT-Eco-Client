@@ -80,6 +80,10 @@ void IoTEcoClientClass::loop()
 	}
 }
 
+bool IoTEcoClientClass::connected()
+{
+	return client->connected() && mqtt.connected();
+}
 
 void IoTEcoClientClass::sendMqttMessage(String message)
 {
