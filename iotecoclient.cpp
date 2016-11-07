@@ -114,6 +114,7 @@ void IoTEcoClientClass::sendMqttMessage(String topic, JsonObject& message)
 	message["id"] = WiFi.macAddress();
 	message["type"] = appName;
 	message["fw"] = GetVersionString();
+	message["up"] = millis() / 1000;
 
 	String msg;
 	message.printTo(msg);
