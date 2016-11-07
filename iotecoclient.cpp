@@ -286,6 +286,11 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 				UpgradeFirmware(vUrl);
 			}
 		}
+		else if (getJsonValue(json, "command").equals("Echo"))
+		{
+			String vMessage = String("Echo: ") + getJsonValue(json, "message");
+			sendMqttMessage(vMessage);
+		}
 		else
 		{
 			if (this->mqttMessageCallback)
