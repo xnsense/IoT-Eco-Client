@@ -3,6 +3,11 @@
 #ifndef _IOTECOCLIENTCLASS_h
 #define _IOTECOCLIENTCLASS_h
 
+
+#ifndef WIFI_CONNECTION_TIMEOUT
+#define WIFI_CONNECTION_TIMEOUT 30000
+#endif // !WIFI_CONNECTION_TIMEOUT
+
 #include "arduino.h"
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>

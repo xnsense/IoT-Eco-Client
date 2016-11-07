@@ -187,10 +187,24 @@ void IoTEcoClientClass::MQTT_connect() {
 	if (debugger) debugger->print("Connecting to ");
 	if (debugger) debugger->println(this->ssid);
 
+	long vTimeout = millis() + WIFI_CONNECTION_TIMEOUT;
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
 		if (debugger) debugger->print(".");
+		if (vTimeout < millis())
+		{
+			if (debugger)
+			{
+				debugger->print("Timout during connect. WiFi status is: ");
+				debugger->println(WiFi.status());
+			}
+			WiFi.disconnect();
+			WiFi.begin(this->ssid, this->ssidPassword);
+			vTimeout = millis() + WIFI_CONNECTION_TIMEOUT;
+		}
 	}
+
+
 	if (debugger) debugger->println();
 
 	if (debugger) debugger->println("WiFi connected");
