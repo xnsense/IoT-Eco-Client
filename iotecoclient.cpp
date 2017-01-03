@@ -58,6 +58,7 @@ void IoTEcoClientClass::begin(const char* appName, const int version[], const ch
 	this->mqtt = PubSubClient(*client);
 
 	this->printDeviceInfo();
+	WiFi.enableAP(false);
 	WiFi.begin(this->ssid, this->ssidPassword);
 	this->mqtt.setServer(mqttName, this->mqttPort);
 
@@ -228,6 +229,7 @@ void IoTEcoClientClass::MQTT_connect() {
 			if (debugger) debugger->print(mqtt.state());
 			if (debugger) debugger->println(" try again in 5 seconds");
 			// Wait 2 seconds before retrying
+			mqtt.disconnect();
 			delay(2000);
 		}
 	}
