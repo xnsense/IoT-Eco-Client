@@ -8,12 +8,14 @@
 #define WIFI_CONNECTION_TIMEOUT 30000
 #endif // !WIFI_CONNECTION_TIMEOUT
 
-#include "arduino.h"
+#include <arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
+
+#include "WebConfig.h"
 
 class IoTEcoClientClass
 {
@@ -34,6 +36,8 @@ private:
 	const char* mqttPublishTopic = 0;
 	const char* mqttSubscribeTopic = 0;
 
+	int accessPointButtonPin = -1;
+
 	WiFiClient *client;
 	byte mac[6];                     // the MAC address of your Wifi shield
 	PubSubClient mqtt;
@@ -42,11 +46,16 @@ private:
 	void UpgradeFirmware(String pUrl);
 
 	void(*mqttMessageCallback)(JsonObject& json) = NULL;
-protected:
 
+	WebConfigClass *webConfig = 0;
+
+	bool isAPButtonPressed();
+
+protected:
 
 public:
 	IoTEcoClientClass();
+	void begin(const char* appName, const int version[], int accessPointButtonPin, Stream& debugger);
 	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort);
 	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, Stream& debugger);
 	void begin(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttUser, const char* mqttPass);
@@ -62,6 +71,7 @@ public:
 	void sendMqttMessage(JsonObject& message);
 	void sendMqttMessage(String topic, JsonObject& message);
 	void setMqttMessageCallback(void(*mqttMessageCallback)(JsonObject& json));
+	void sendConfigMessage();
 	String getJsonValue(JsonObject& json, String key);
 	void mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
 };

@@ -5,9 +5,42 @@
 void IoTEcoClientClass_mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
 
 #include "iotecoclient.h"
+#include "Config.h"
+
 IoTEcoClientClass::IoTEcoClientClass()
 {
 
+}
+
+void IoTEcoClientClass::begin(const char* appName, const int version[], int accessPointButtonPin, Stream& debugger)
+{
+	this->version = version;
+	this->appName = appName;
+	this->debugger = &debugger;
+	this->accessPointButtonPin = accessPointButtonPin;
+
+	if (accessPointButtonPin)
+		pinMode(accessPointButtonPin, INPUT);
+
+	Config config = Config();
+	if (config.Load(0) && !this->isAPButtonPressed())
+	{
+		if (this->debugger) config.Print(debugger);
+
+		if (config.IsSecure())
+			this->beginSecure(appName, version, config.ssid, config.ssidPassword, config.mqtt, config.mqttPort, config.mqttClientID, config.mqttUser, config.mqttPass, config.mqttPublishTopic, config.mqttSubscribeTopic, debugger);
+		else
+		{
+			this->mqttClientID = config.mqttClientID;
+			this->mqttPublishTopic = config.mqttPublishTopic;
+			this->mqttSubscribeTopic = config.mqttSubscribeTopic;
+			this->begin(appName, version, config.ssid, config.ssidPassword, config.mqtt, config.mqttPort, config.mqttUser, config.mqttPass, debugger);
+		}
+	}
+	else
+	{
+		WebConfigClass::Setup(&config);
+	}
 }
 
 void IoTEcoClientClass::beginSecure(const char* appName, const int version[], const char* ssid, const char* ssidPassword, const char* mqtt, int mqttPort, const char* mqttClientID, const char* mqttUser, const char* mqttPass, const char* mqttPublishTopic, const char* mqttSubscribeTopic, Stream& debugger)
@@ -204,34 +237,39 @@ void IoTEcoClientClass::MQTT_connect() {
 			WiFi.begin(this->ssid, this->ssidPassword);
 			vTimeout = millis() + WIFI_CONNECTION_TIMEOUT;
 		}
+		yield();
 	}
 
-
-	if (debugger) debugger->println();
-
-	if (debugger) debugger->println("WiFi connected");
-	if (debugger) debugger->println("IP address: ");
-	if (debugger) debugger->println(WiFi.localIP());
-
-	if (debugger) debugger->println("\nconnecting to MQTT...");
-
+	if (debugger) {
+		debugger->println();
+		debugger->println("WiFi connected");
+		debugger->println("IP address: ");
+		debugger->println(WiFi.localIP());
+		debugger->print("\nconnecting to MQTT: ");
+		debugger->print(mqttName);
+		debugger->print(", port: ");
+		debugger->print(mqttPort);
+		debugger->println();
+	}
 	while (!mqtt.connected()) { // (!mqtt.connect(mqttClientName)) { //, "user", "pass")) {
 		if ((mqttUser == 0 && mqtt.connect(mqttClientName)) || (mqttUser != 0 && mqtt.connect(mqttClientName, mqttUser, mqttPass)))
 		{
 			if (debugger) debugger->println("\nSuccessfully connected to MQTT!");
 			const char * vTopic = mqttSubscribeTopic == 0 ? "sensors/#" : mqttSubscribeTopic;
 			mqtt.subscribe(vTopic);
+			if (debugger) debugger->printf("  Subscribing to [%s]\r\n", vTopic);
 		}
 		else
 		{
 			if (debugger) debugger->print(".");
 			if (debugger) debugger->print("failed, rc=");
 			if (debugger) debugger->print(mqtt.state());
-			if (debugger) debugger->println(" try again in 5 seconds");
+			if (debugger) debugger->println(" trying again in 5 seconds");
 			// Wait 2 seconds before retrying
 			mqtt.disconnect();
 			delay(2000);
 		}
+		yield();
 	}
 
 	
@@ -308,6 +346,10 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 			String vMessage = String("Echo: ") + getJsonValue(json, "message");
 			sendMqttMessage(vMessage);
 		}
+		else if (getJsonValue(json, "command").equals("GetConfig"))
+		{
+			sendConfigMessage();
+		}
 		else
 		{
 			if (this->mqttMessageCallback)
@@ -327,6 +369,19 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 	}
 }
 
+void IoTEcoClientClass::sendConfigMessage()
+{
+	Config config;
+	if (config.Load(0))
+	{
+
+	}
+	else
+	{
+		sendMqttMessage("No config in EEPROM");
+	}
+}
+
 String IoTEcoClientClass::getJsonValue(JsonObject& json, String key)
 {
 	for (JsonObject::iterator it = json.begin(); it != json.end(); ++it) {
@@ -340,6 +395,19 @@ void IoTEcoClientClass::setMqttMessageCallback(void(*mqttMessageCallback)(JsonOb
 {
 	this->mqttMessageCallback = mqttMessageCallback;
 }
+
+bool IoTEcoClientClass::isAPButtonPressed()
+{
+	if (accessPointButtonPin)
+	{
+		return digitalRead(accessPointButtonPin);
+	}
+	else
+		return false;
+}
+
+
+
 
 IoTEcoClientClass IoTEcoClient;
 
