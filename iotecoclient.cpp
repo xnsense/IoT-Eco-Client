@@ -363,6 +363,10 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 		{
 			sendConfigMessage();
 		}
+		else if (getJsonValue(json, "command").equals("SetConfig"))
+		{
+			setConfig(json["config"].asObject());
+		}
 		else
 		{
 			if (this->mqttMessageCallback)
@@ -381,13 +385,100 @@ void IoTEcoClientClass::mqttMessageReceived(char* topic, unsigned char* payload,
 		if (debugger) debugger->println("Message was not addressed for this device");
 	}
 }
+void IoTEcoClientClass::setConfig(JsonObject& json)
+{
+	Config config;
+	config.Load(0);
+
+	if (hasValue(json, "ssid")) 
+	{
+		String value = getJsonValue(json, "ssid");
+		config.ssid = new char[value.length() + 1];
+		value.toCharArray(config.ssid, value.length() + 1, 0);
+	}
+	if (hasValue(json, "ssidPassword"))
+	{
+		String value = getJsonValue(json, "ssidPassword");
+		config.ssidPassword = new char[value.length() + 1];
+		value.toCharArray(config.ssidPassword, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqtt"))
+	{
+		String value = getJsonValue(json, "mqtt");
+		config.mqtt = new char[value.length() + 1];
+		value.toCharArray(config.mqtt, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqttPort"))
+	{
+		String value = getJsonValue(json, "mqttPort");
+		config.mqttPort = value.toInt();
+	}
+	if (hasValue(json, "mqttClientID"))
+	{
+		String value = getJsonValue(json, "mqttClientID");
+		config.mqttClientID = new char[value.length() + 1];
+		value.toCharArray(config.mqttClientID, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqttPublishTopic"))
+	{
+		String value = getJsonValue(json, "mqttPublishTopic");
+		config.mqttPublishTopic = new char[value.length() + 1];
+		value.toCharArray(config.mqttPublishTopic, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqttSubscribeTopic"))
+	{
+		String value = getJsonValue(json, "mqttSubscribeTopic");
+		config.mqttSubscribeTopic = new char[value.length() + 1];
+		value.toCharArray(config.mqttSubscribeTopic, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqttUser"))
+	{
+		String value = getJsonValue(json, "mqttUser");
+		config.mqttUser = new char[value.length() + 1];
+		value.toCharArray(config.mqttUser, value.length() + 1, 0);
+	}
+	if (hasValue(json, "mqttPass"))
+	{
+		String value = getJsonValue(json, "mqttPass");
+		config.mqttPass = new char[value.length() + 1];
+		value.toCharArray(config.mqttPass, value.length() + 1, 0);
+	}
+
+	config.Print(Serial);
+	config.Save(0);
+
+	sendMqttMessage("New config received and stored in EEPROM. Rebooting now");
+	ESP.reset();
+}
+
+bool IoTEcoClientClass::hasValue(JsonObject& json, String key)
+{
+	for (JsonObject::iterator it = json.begin(); it != json.end(); ++it) {
+		if (key.equals(it->key))
+			return true;
+	}
+	return false;
+}
 
 void IoTEcoClientClass::sendConfigMessage()
 {
 	Config config;
 	if (config.Load(0))
 	{
+		StaticJsonBuffer<500> jsonBuffer;
+		JsonObject& json = jsonBuffer.createObject();
+		JsonObject& configJson = json.createNestedObject("Config");
+		configJson["ssid"] = config.ssid;
+		configJson["ssidPassword"] = config.ssidPassword;
+		configJson["mqtt"] = config.mqtt;
+		configJson["mqttPort"] = config.mqttPort;
+		configJson["mqttClientID"] = config.mqttClientID;
+		configJson["mqttPublishTopic"] = config.mqttPublishTopic;
+		configJson["mqttSubscribeTopic"] = config.mqttSubscribeTopic;
+		configJson["mqttUser"] = config.mqttUser;
+		configJson["mqttPass"] = config.mqttPass;
 
+		sendMqttMessage(json);
 	}
 	else
 	{
@@ -402,6 +493,15 @@ String IoTEcoClientClass::getJsonValue(JsonObject& json, String key)
 			return String(it->value.asString());
 	}
 	return String("");
+}
+
+JsonVariant IoTEcoClientClass::getJsonObject(JsonObject& json, String key)
+{
+	for (JsonObject::iterator it = json.begin(); it != json.end(); ++it) {
+		if (key.equals(it->key))
+			return JsonVariant(it->value.asObject());
+	}
+	return JsonVariant(NULL);
 }
 
 void IoTEcoClientClass::setMqttMessageCallback(void(*mqttMessageCallback)(JsonObject& json))

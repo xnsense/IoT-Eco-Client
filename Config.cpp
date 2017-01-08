@@ -13,19 +13,6 @@ bool Config::Save(int pAddress)
 	EEPROM.put(vAddress, EEPROM_CHECK_SUM);
 	vAddress++;
 
-	/*
-	char* ssid;
-	char* ssidPassword;
-	char* mqtt;
-	int mqttPort;
-	char* mqttClientID;
-	char* mqttPublishTopic;
-	char* mqttSubscribeTopic;
-	bool secure;
-	char* mqttUser;
-	char* mqttPass;
-	*/
-
 	vAddress += SaveString(vAddress, ssid);
 	vAddress += SaveString(vAddress, ssidPassword);
 	vAddress += SaveString(vAddress, mqtt);
@@ -58,21 +45,6 @@ bool Config::Load(int pAddress)
 	if (EEPROM.read(vAddress) == EEPROM_CHECK_SUM)
 	{
 		vAddress++;
-		Serial.println("Found correct checksum of EEPROM");
-
-
-		/*
-		char* ssid;
-		char* ssidPassword;
-		char* mqtt;
-		int mqttPort;
-		char* mqttClientID;
-		char* mqttPublishTopic;
-		char* mqttSubscribeTopic;
-		bool secure;
-		char* mqttUser;
-		char* mqttPass;
-		*/
 
 		vAddress += ReadString(vAddress, &ssid);
 		vAddress += ReadString(vAddress, &ssidPassword);
@@ -89,6 +61,11 @@ bool Config::Load(int pAddress)
 		{
 			vAddress += ReadString(vAddress, &mqttUser);
 			vAddress += ReadString(vAddress, &mqttPass);
+		}
+		else
+		{
+			mqttUser = 0;
+			mqttPass = 0;
 		}
 
 		vSuccess = true;
@@ -136,14 +113,15 @@ int Config::ReadBool(int pAddress, bool *pValue)
 {
 	byte y = EEPROM.read(pAddress);
 	*pValue = (bool)y;
+	//Serial.printf("Read bool as %#x [%s]\r\n", y, (*pValue ? "true" : "false"));
 	return 1;
 }
 
 int Config::SaveBool(int pAddress, bool pValue)
 {
-	bool x = &pValue;
-	byte y = (byte)x;
-	EEPROM.write(pAddress, x);
+	byte y = (byte)pValue;
+	//Serial.printf("Writing bool as %#x [%s]\r\n", y, (pValue ? "true" : "false"));
+	EEPROM.write(pAddress, y);
 	return 1;
 }
 void Config::Print(Stream& serial)

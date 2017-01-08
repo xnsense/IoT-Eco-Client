@@ -74,7 +74,10 @@ public:
 	void sendMqttMessage(String topic, JsonObject& message);
 	void setMqttMessageCallback(void(*mqttMessageCallback)(JsonObject& json));
 	void sendConfigMessage();
+	void setConfig(JsonObject& json);
+	bool hasValue(JsonObject& json, String key);
 	String getJsonValue(JsonObject& json, String key);
+	JsonVariant getJsonObject(JsonObject& json, String key);
 	void mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
 	void setAliveMessageInterval(unsigned long interval);
 };

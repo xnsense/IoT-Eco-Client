@@ -109,6 +109,8 @@ void WebConfigClass::WebServer_SaveConfig()
 
 	String html = saveConfigResponsePage();
 	gWebServer.send(200, "text/html", html);
+
+	ESP.reset();
 }
 
 const char* WebConfigClass::AP_SSID = "XNS_DEVICE";
@@ -188,7 +190,7 @@ String WebConfigClass::getConfigPage()
 String WebConfigClass::saveConfigResponsePage()
 {
 	String html = String("<html><body>");
-	html += "Hello from save page!";
+	html += "Configuration saved, device will now reboot...";
 	html += "</body></html>";
 	return html;
 }
