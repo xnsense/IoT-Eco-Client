@@ -35,6 +35,8 @@ private:
 	const char* mqttClientID = 0;
 	const char* mqttPublishTopic = 0;
 	const char* mqttSubscribeTopic = 0;
+	unsigned long aliveMessageInterval = 0;
+	unsigned long lastAliveMessage = 0;
 
 	int accessPointButtonPin = -1;
 
@@ -74,6 +76,7 @@ public:
 	void sendConfigMessage();
 	String getJsonValue(JsonObject& json, String key);
 	void mqttMessageReceived(char* topic, unsigned char* payload, unsigned int length);
+	void setAliveMessageInterval(unsigned long interval);
 };
 
 extern IoTEcoClientClass IoTEcoClient;

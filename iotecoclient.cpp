@@ -11,6 +11,10 @@ IoTEcoClientClass::IoTEcoClientClass()
 {
 
 }
+void IoTEcoClientClass::setAliveMessageInterval(unsigned long interval)
+{
+	aliveMessageInterval = interval * 1000 * 60;
+}
 
 void IoTEcoClientClass::begin(const char* appName, const int version[], int accessPointButtonPin, Stream& debugger)
 {
@@ -101,6 +105,7 @@ void IoTEcoClientClass::begin(const char* appName, const int version[], const ch
 
 	String topic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) + String("/connected") : String(mqttPublishTopic);
 	sendMqttMessage(topic, "connected");
+	lastAliveMessage = 0;
 }
 
 void IoTEcoClientClass::loop()
@@ -110,6 +115,14 @@ void IoTEcoClientClass::loop()
 
 	if (!client->connected() || !mqtt.connected()) {
 		MQTT_connect();
+	}
+	else
+	{
+		if (aliveMessageInterval > 0 && (lastAliveMessage + aliveMessageInterval < millis()))
+		{
+			sendMqttMessage("I'm alive");
+			lastAliveMessage = millis();
+		}
 	}
 }
 
