@@ -103,8 +103,7 @@ void IoTEcoClientClass::begin(const char* appName, const int version[], const ch
 	this->mqtt.setCallback(IoTEcoClientClass_mqttMessageReceived);
 	this->MQTT_connect();
 
-	String topic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) + String("/connected") : String(mqttPublishTopic);
-	sendMqttMessage(topic, "connected");
+	sendMqttMessage("Connected");
 	lastAliveMessage = 0;
 }
 
@@ -133,13 +132,13 @@ bool IoTEcoClientClass::connected()
 
 void IoTEcoClientClass::sendMqttMessage(JsonObject& message)
 {
-	String vTopic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) : String(mqttPublishTopic);
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
 	sendMqttMessage(vTopic, message);
 }
 
 void IoTEcoClientClass::sendMqttMessage(String message)
 {
-	String vTopic = mqttPublishTopic == 0 ? String("sensors/") + String(appName) : String(mqttPublishTopic);
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
 	sendMqttMessage(vTopic, message);
 }
 
@@ -268,9 +267,19 @@ void IoTEcoClientClass::MQTT_connect() {
 		if ((mqttUser == 0 && mqtt.connect(mqttClientName)) || (mqttUser != 0 && mqtt.connect(mqttClientName, mqttUser, mqttPass)))
 		{
 			if (debugger) debugger->println("\nSuccessfully connected to MQTT!");
-			const char * vTopic = mqttSubscribeTopic == 0 ? "sensors/#" : mqttSubscribeTopic;
-			mqtt.subscribe(vTopic);
-			if (debugger) debugger->printf("  Subscribing to [%s]\r\n", vTopic);
+			if (mqttSubscribeTopic != 0)
+			{
+				mqtt.subscribe(mqttSubscribeTopic);
+				if (debugger) debugger->printf("  Subscribing to [%s]\r\n", mqttSubscribeTopic);
+			}
+			else
+			{
+				String vTopic = String("sensors/in/") + WiFi.macAddress();
+				char buffer[vTopic.length() + 1];
+				vTopic.toCharArray(buffer, vTopic.length() + 1, 0);
+				mqtt.subscribe(buffer);
+				if (debugger) debugger->printf("  Subscribing to [%s]\r\n", buffer);
+			}
 		}
 		else
 		{
