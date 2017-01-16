@@ -130,29 +130,52 @@ bool IoTEcoClientClass::connected()
 	return client->connected() && mqtt.connected();
 }
 
+void IoTEcoClientClass::sendMqttData(JsonObject& data)
+{
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
+	if (!client->connected() || !mqtt.connected()) {
+		MQTT_connect();
+	}
+	StaticJsonBuffer<500> jsonBuffer;
+	JsonObject& json = jsonBuffer.createObject();
+	json["id"] = WiFi.macAddress();
+	json["type"] = appName;
+	json["fw"] = GetVersionString();
+	json["up"] = millis() / 1000;
+	json["data"] = data;
+
+	String msg;
+	data.printTo(msg);
+
+	mqtt.publish(vTopic.c_str(), msg.c_str());
+
+}
+void IoTEcoClientClass::sendMqttData(String data)
+{
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
+	
+	if (!client->connected() || !mqtt.connected()) {
+		MQTT_connect();
+	}
+
+	StaticJsonBuffer<500> jsonBuffer;
+	JsonObject& json = jsonBuffer.createObject();
+	json["id"] = WiFi.macAddress();
+	json["type"] = appName;
+	json["fw"] = GetVersionString();
+	json["up"] = millis() / 1000;
+	json["data"] = data;
+
+	String msg;
+	json.printTo(msg);
+
+	mqtt.publish(vTopic.c_str(), msg.c_str());
+
+}
+
 void IoTEcoClientClass::sendMqttMessage(JsonObject& message)
 {
 	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
-	sendMqttMessage(vTopic, message);
-}
-
-void IoTEcoClientClass::sendMqttMessage(String message)
-{
-	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
-	sendMqttMessage(vTopic, message);
-}
-
-void IoTEcoClientClass::sendMqttMessage(String topic, String message)
-{
-	StaticJsonBuffer<500> jsonBuffer;
-	JsonObject& json = jsonBuffer.createObject();
-	json["message"] = message;
-
-	sendMqttMessage(topic, json);
-}
-
-void IoTEcoClientClass::sendMqttMessage(String topic, JsonObject& message)
-{
 	if (!client->connected() || !mqtt.connected()) {
 		MQTT_connect();
 	}
@@ -165,8 +188,31 @@ void IoTEcoClientClass::sendMqttMessage(String topic, JsonObject& message)
 	String msg;
 	message.printTo(msg);
 
-	mqtt.publish(topic.c_str(), msg.c_str());
+	mqtt.publish(vTopic.c_str(), msg.c_str());
 }
+
+void IoTEcoClientClass::sendMqttMessage(String message)
+{
+	String vTopic = mqttPublishTopic == 0 ? String("sensors/out/") + WiFi.macAddress() : String(mqttPublishTopic);
+	
+	if (!client->connected() || !mqtt.connected()) {
+		MQTT_connect();
+	}
+
+	StaticJsonBuffer<500> jsonBuffer;
+	JsonObject& json = jsonBuffer.createObject();
+	json["id"] = WiFi.macAddress();
+	json["type"] = appName;
+	json["fw"] = GetVersionString();
+	json["up"] = millis() / 1000;
+	json["message"] = message;
+
+	String msg;
+	json.printTo(msg);
+
+	mqtt.publish(vTopic.c_str(), msg.c_str());
+}
+
 
 
 void IoTEcoClientClass::printDeviceInfo()
