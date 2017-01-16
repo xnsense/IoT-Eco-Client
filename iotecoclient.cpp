@@ -145,7 +145,7 @@ void IoTEcoClientClass::sendMqttData(JsonObject& data)
 	json["data"] = data;
 
 	String msg;
-	data.printTo(msg);
+	json.printTo(msg);
 
 	mqtt.publish(vTopic.c_str(), msg.c_str());
 
